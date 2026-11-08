@@ -1,22 +1,23 @@
-import motor.motor_asyncio
-from info import Var
+from database.supabase_client import table, count_rows, fetch_all
+
 
 class Database:
-    def __init__(self, uri, database_name):
-        self._client = motor.motor_asyncio.AsyncIOMotorClient(uri)
-        self.db = self._client[database_name]
-        self.col = self.db.users
+    """Users table: id (bigint, telegram user id), banned, reason."""
 
     async def add_user(self, id):
-        user = dict(id=id)
-        if not await self.col.find_one({'id': id}):
-            await self.col.insert_one(user)
+        # ignore_duplicates -> existing rows (and their banned flag) are left untouched
+        await (await table("users")).upsert({"id": int(id)}, on_conflict="id", ignore_duplicates=True).execute()
 
     async def total_users_count(self):
-        count = await self.col.count_documents({})
-        return count
+        return await count_rows("users")
 
     async def get_all_users(self):
-        return self.col.find({})
+        """Async iterator of user dicts. Both 'id' and '_id' keys are provided
+        so old code using either keeps working."""
+        async def _gen():
+            async for row in fetch_all("users", "id", order="id"):
+                yield {"id": row["id"], "_id": row["id"]}
+        return _gen()
 
-db = Database(Var.DATABASE_URL, Var.name)
+
+db = Database()
