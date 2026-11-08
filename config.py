@@ -5,13 +5,11 @@ API_ID = int(os.environ.get("API_ID", 0))
 API_HASH = os.environ.get("API_HASH", "") 
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
 
-# --- Database ---
-DATABASE_URI = os.environ.get("DATABASE_URI", os.environ.get("DATABASE_URL", os.environ.get("MONGO_URI", "")))
-DATABASE_NAME = os.environ.get("DATABASE_NAME", os.environ.get("DB_NAME", "TelegramBot"))
-
-# Aliases to fix module import mismatches across files
-MONGO_URI = DATABASE_URI
-DB_NAME = DATABASE_NAME
+# --- Database (Supabase) ---
+# Project URL: Supabase -> Project Settings -> API  (https://xxxx.supabase.co)
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "").strip()
+# Use the *service_role* key (server side only, never share it)
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY", os.environ.get("SUPABASE_SERVICE_KEY", "")).strip()
 
 # --- Channel Configuration ---
 # Hardcoded default fallback to your channel ID: -1004482213469
