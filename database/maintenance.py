@@ -1,13 +1,14 @@
-from database.users_db import db
+from database.supabase_client import table
+
 
 async def set_maintenance(state: bool):
-    await db.db.settings.update_one(
-        {'id': 'maintenance'},
-        {'$set': {'state': state}},
-        upsert=True
-    )
+    await (await table("settings")).upsert(
+        {"id": "maintenance", "state": bool(state)}, on_conflict="id"
+    ).execute()
+
 
 async def get_maintenance():
-    settings = await db.db.settings.find_one({'id': 'maintenance'})
-    return settings.get('state', False) if settings else False
-  
+    res = await (await table("settings")).select("state").eq("id", "maintenance").limit(1).execute()
+    rows = res.data or []
+    return bool(rows[0].get("state")) if rows else False
+    
