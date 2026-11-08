@@ -1,10 +1,5 @@
 import time
-import motor.motor_asyncio
-from config import DATABASE_URI
-
-_client = motor.motor_asyncio.AsyncIOMotorClient(DATABASE_URI)
-_db = _client["FileToLinkBot"]
-col = _db.streamtape
+from database.supabase_client import table, get_client, fetch_all
 
 # One row per bot file (file_id = message id in BIN_CHANNEL):
 #   st_id   : current Streamtape file id
@@ -15,17 +10,30 @@ col = _db.streamtape
 
 
 async def get(file_id):
-    return await col.find_one({"file_id": int(file_id)})
+    res = await (await table("streamtape")).select("*").eq("file_id", int(file_id)).limit(1).execute()
+    rows = res.data or []
+    return rows[0] if rows else None
 
 
 async def upsert(file_id, **fields):
     fields["updated"] = time.time()
-    await col.update_one({"file_id": int(file_id)}, {"$set": fields}, upsert=True)
+    fields["file_id"] = int(file_id)
+    await (await table("streamtape")).upsert(fields, on_conflict="file_id").execute()
 
 
 async def inc(file_id, **counters):
-    await col.update_one({"file_id": int(file_id)}, {"$inc": counters})
+    """Atomic increment (uses the `streamtape_inc` SQL function from schema.sql)."""
+    client = await get_client()
+    await client.rpc(
+        "streamtape_inc",
+        {
+            "p_file_id": int(file_id),
+            "p_healed": int(counters.get("healed", 0)),
+            "p_fails": int(counters.get("fails", 0)),
+        },
+    ).execute()
 
 
 async def all_records():
-    return await col.find({}).to_list(length=None)
+    return [row async for row in fetch_all("streamtape", "*", order="file_id")]
+    
