@@ -37,9 +37,9 @@ async def get_all_files(limit=300):
         .limit(limit)
         .execute()
     )
-    return res.data or []
+    return [{k: v for k, v in r.items() if v is not None} for r in (res.data or [])]
 
 
 async def total_files_count():
     return await count_rows("files")
-    
+
