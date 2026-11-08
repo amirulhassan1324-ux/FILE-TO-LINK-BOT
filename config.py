@@ -21,7 +21,7 @@ OWNER_ID = int(os.environ.get("OWNER_ID", 0))
 ADMINS = [OWNER_ID] 
 
 # --- Connection Settings ---
-PORT = int(os.environ.get("PORT", "8080"))
+PORT = int(os.environ.get("PORT", "25803"))
 # Your bot-hosting.net domain, no https://. All links are built from it.
 FQDN = os.environ.get("FQDN", "").replace("https://", "").replace("http://", "").strip().strip("/")
 BOT_USERNAME = os.environ.get("BOT_USERNAME", "")
