@@ -1,19 +1,18 @@
-from database.users_db import db
+from database.supabase_client import table
+
 
 async def ban_user(user_id, reason):
-    await db.col.update_one(
-        {'id': user_id},
-        {'$set': {'banned': True, 'reason': reason}},
-        upsert=True
-    )
+    await (await table("users")).upsert(
+        {"id": int(user_id), "banned": True, "reason": reason}, on_conflict="id"
+    ).execute()
+
 
 async def unban_user(user_id):
-    await db.col.update_one(
-        {'id': user_id},
-        {'$set': {'banned': False}}
-    )
+    await (await table("users")).update({"banned": False}).eq("id", int(user_id)).execute()
+
 
 async def is_user_banned(user_id):
-    user = await db.col.find_one({'id': user_id})
-    return user.get('banned', False) if user else False
-  
+    res = await (await table("users")).select("banned").eq("id", int(user_id)).limit(1).execute()
+    rows = res.data or []
+    return bool(rows[0].get("banned")) if rows else False
+    
