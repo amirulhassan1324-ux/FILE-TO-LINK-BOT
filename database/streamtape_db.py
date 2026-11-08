@@ -9,10 +9,15 @@ from database.supabase_client import table, get_client, fetch_all
 #   fails   : failed upload attempts in a row
 
 
+def _clean(row):
+    """Drop NULL columns so rec.get("last_check", 0) behaves like a missing field (as in MongoDB)."""
+    return {k: v for k, v in row.items() if v is not None}
+
+
 async def get(file_id):
     res = await (await table("streamtape")).select("*").eq("file_id", int(file_id)).limit(1).execute()
     rows = res.data or []
-    return rows[0] if rows else None
+    return _clean(rows[0]) if rows else None
 
 
 async def upsert(file_id, **fields):
@@ -35,5 +40,5 @@ async def inc(file_id, **counters):
 
 
 async def all_records():
-    return [row async for row in fetch_all("streamtape", "*", order="file_id")]
-    
+    return [_clean(row) async for row in fetch_all("streamtape", "*", order="file_id")]
+
